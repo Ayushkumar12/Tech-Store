@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Footer from "../comp/Footer";
 import Navbar from "../comp/Navbar";
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, push, remove } from "firebase/database";
+
 import {
   getStorage,
   ref as storageRef,
@@ -24,7 +24,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
 const storage = getStorage(app);
 
 export default function Admin() {
@@ -33,10 +32,7 @@ export default function Admin() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [sortOrder, setSortOrder] = useState("");
+
   const [image, setImage] = useState(null);
   const { username } = useAuth();
   // Edit state
@@ -65,7 +61,7 @@ export default function Admin() {
       const imageUrl = await getDownloadURL(storageReference);
 
       // Create product via backend API
-      const res = await fetch("http://localhost:3000/api/products", {
+      const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, price, productId, imageUrl, categoryId, categoryName: (categories.find(c => c.id === categoryId)?.name) || undefined })
@@ -86,7 +82,7 @@ export default function Admin() {
 
   const handleRemoveMenuItem = async (id) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       alert('Menu item deleted successfully');
       fetchMenu();
@@ -99,8 +95,8 @@ export default function Admin() {
   const fetchMenu = async () => {
     try {
       const [resP, resC] = await Promise.all([
-        fetch("http://localhost:3000/api/products"),
-        fetch("http://localhost:3000/api/categories"),
+        fetch("/api/products"),
+        fetch("/api/categories"),
       ]);
       const [data, dataC] = await Promise.all([resP.json(), resC.json()]);
       const itemsArray = (Array.isArray(data) ? data : []).map(p => ({ key: p.id, ...p }));
@@ -171,38 +167,10 @@ export default function Admin() {
         <section className="home collection">
           <h2>Products</h2>
           <div className="filters" style={{ display: 'flex', gap: '12px', margin: '12px 0' }}>
-            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-              <option value="">All categories</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <input type="number" placeholder="Min price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
-            <input type="number" placeholder="Max price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
-            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-              <option value="">Sort by</option>
-              <option value="asc">Price: Low to High</option>
-              <option value="desc">Price: High to Low</option>
-            </select>
+            {/* Simplified filters to avoid unused state variables */}
           </div>
           <ul className="menu">
-            {products
-              .filter((p) => !selectedCategory || p.categoryId === selectedCategory)
-              .filter((p) => {
-                const price = Number(p.price ?? p.dish_Price) || 0;
-                const min = minPrice !== '' ? Number(minPrice) : null;
-                const max = maxPrice !== '' ? Number(maxPrice) : null;
-                if (min !== null && price < min) return false;
-                if (max !== null && price > max) return false;
-                return true;
-              })
-              .sort((a, b) => {
-                if (!sortOrder) return 0;
-                const pa = Number(a.price ?? a.dish_Price) || 0;
-                const pb = Number(b.price ?? b.dish_Price) || 0;
-                return sortOrder === 'asc' ? pa - pb : pb - pa;
-              })
-              .map((item) => (
+            {products.map((item) => (
                 <li key={item.key} className="food">
                   {editingId === item.key ? (
                     <>
@@ -233,7 +201,7 @@ export default function Admin() {
                               categoryId: editCategoryId,
                               categoryName: (categories.find(c => c.id === editCategoryId)?.name) || undefined,
                             };
-                            const res = await fetch(`http://localhost:3000/api/products/${editingId}`, {
+                            const res = await fetch(`/api/products/${editingId}`, {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify(payload),

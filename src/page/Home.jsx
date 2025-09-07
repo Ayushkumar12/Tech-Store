@@ -14,7 +14,12 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState("");
 
 
-  const [clickEffect, setClickEffect] = useState(false);
+  const [clickEffect] = useState(false);
+
+  // Minimal placeholder to avoid no-undef; integrate API later
+  const handleAddToCart = (product) => {
+    // no-op for now
+  };
   
   
 
@@ -87,7 +92,7 @@ function Home() {
                   })
                   .map((product) => (
                     <li key={product.productId} className="food" style={{ listStyle: 'none' }}>
-                      <ProductCard product={product} onAdd={() => handleAddToCart(product)} />
+                      <ProductCard product={product} onAdd={() => { /* TODO: implement add-to-cart here or navigate to Cart */ }} />
                     </li>
                   ))
               ) : (

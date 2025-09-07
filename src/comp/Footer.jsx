@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+
 import "../asserts/style/footer.css";
 import face from "../asserts/icon/facebook.png"
 import insta from "../asserts/icon/instagram.png"
