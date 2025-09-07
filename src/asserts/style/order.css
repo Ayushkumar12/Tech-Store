@@ -1,0 +1,47 @@
+.list *{
+    list-style: none;
+    font-size: large;
+    font-weight: 300;
+    padding: 3px;
+}
+.list{
+    width: 100%;
+}
+.food2 *{
+    padding: 2px;
+}
+.n{
+    margin: 0%;
+}
+.orderstart{
+    justify-content: center;
+    height: 40dvh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    color: antiquewhite;
+    background-color: brown;
+}
+.food2 {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: column;
+    width: 20rem;
+    background-color: rgb(206, 230, 252);
+    margin: 10px;
+    /* border: 1px solid rgb(39, 39, 39); */
+    border-radius: 20px;
+    padding: 15px;
+  }
+  .food2 button {
+    background-color: rgb(76, 76, 240);
+    border-radius: 20px;
+    color: white;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+  }
