@@ -29,8 +29,8 @@ function Home() {
     const load = async () => {
       try {
         const [resP, resC] = await Promise.all([
-          fetch("https://tech-store-navy.vercel.app/api/products"),
-          fetch("https://tech-store-navy.vercel.app/api/categories"),
+          fetch("https://tech-store-navy.vercel.app:2000/api/products"),
+          fetch("https://tech-store-navy.vercel.app:2000/api/categories"),
         ]);
         const [dataP, dataC] = await Promise.all([resP.json(), resC.json()]);
         setProducts(Array.isArray(dataP) ? dataP : []);

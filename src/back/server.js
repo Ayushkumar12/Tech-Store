@@ -448,7 +448,7 @@ app.post('/api/orders', async (req, res) => {
 });
 // ---------------------------------------------------------------------------
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 2000;
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);

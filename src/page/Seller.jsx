@@ -5,6 +5,8 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "fire
 import { useAuth } from "../Authentication/Authpro";
 import Navbar from "../comp/Navbar";
 import "../asserts/style/admin.css";
+const { getDatabase } = require('firebase/database');
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyDlRqiS3HiU4BWyWrHvASO5VLRx5vy7Haw",
@@ -51,7 +53,7 @@ export default function Seller() {
       const imageUrl = await getDownloadURL(storageReference);
 
       // Create product via backend API
-      await fetch("/api/products", {
+      await fetch("http://localhost:2000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,7 +85,7 @@ export default function Seller() {
         alert("You can only remove your own products");
         return;
       }
-      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`http://localhost:2000/api/products/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       alert("Product removed");
       // Refresh
@@ -132,7 +134,7 @@ export default function Seller() {
         categoryName: (categories.find(c => c.id === editCategoryId)?.name) || undefined,
         imageUrl,
       };
-      const res = await fetch(`/api/products/${editingId}`, {
+      const res = await fetch(`http://localhost:2000/api/products/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -152,8 +154,8 @@ export default function Seller() {
     const load = async () => {
       try {
         const [resP, resC] = await Promise.all([
-          fetch("/api/products"),
-          fetch("/api/categories"),
+          fetch("http://localhost:2000/api/products"),
+          fetch("http://localhost:2000/api/categories"),
         ]);
         const [dataP, dataC] = await Promise.all([resP.json(), resC.json()]);
         const items = (Array.isArray(dataP) ? dataP : []).map(p => ({ key: p.id, ...p }));
