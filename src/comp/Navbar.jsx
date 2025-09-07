@@ -31,9 +31,10 @@ export default function Navbar() {
 
   return (
     <nav>
-      <h2>Delightio</h2>
+      <h2>Tech Store</h2>
       <ul className='side'>
         <Link to='/' className='log'>Shop</Link>
+        <Link to='/cart' className='log'>Cart</Link>
         <Link to='/seller' className='log'>Seller</Link>
         <Link to='/order' className='log'>Orders</Link>
         <Link to='/admin' className='log'>Admin</Link>

@@ -1,5 +1,6 @@
 import React from 'react';
 import Home from './page/Home';
+import Cart from './page/Cart';
 import Admin from './page/Admin';
 import Order from './page/Order';
 import Seller from './page/Seller';
@@ -15,6 +16,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path='/' element={<Home />}/>
+            <Route path='/cart' element={<Cart />} />
             <Route path='/auth' element={<Auth />}/>
             <Route path='/admin' element={<Protectroute roles={["admin"]}><Admin /></Protectroute>} />
             <Route path='/seller' element={<Protectroute roles={["seller","admin"]}><Seller /></Protectroute>} />

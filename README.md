@@ -1,4 +1,4 @@
-# Delightio — Online Food Ordering App
+# Tech Store — E-Commerce App
 
 A Create React App project for a simple restaurant ordering system using Firebase (Auth, Realtime Database, and Storage).
 

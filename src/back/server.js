@@ -330,9 +330,128 @@ app.post('/api/users', async (req, res) => {
     res.status(500).json({ message: 'Failed to create user' });
   }
 });
+
+// Cart API -------------------------------------------------------------------
+// Data model: carts/{cartId}/items/{productId} => { productId, name, price, quantity, imageUrl }
+const cartPath = (cartId) => `carts/${cartId}`;
+const cartItemsPath = (cartId) => `${cartPath(cartId)}/items`;
+
+// Get cart with computed total
+app.get('/api/cart/:cartId', async (req, res) => {
+  try {
+    const { cartId } = req.params;
+    const snap = await get(child(dbRef, cartItemsPath(cartId)));
+    const itemsObj = snap.exists() ? snap.val() : {};
+    const items = Object.values(itemsObj || {});
+    const total = items.reduce((acc, it) => acc + Number(it.price || 0) * Number(it.quantity || 0), 0);
+    res.json({ items, total: Number(total.toFixed(2)) });
+  } catch (err) {
+    console.error('GET /api/cart/:cartId error:', err);
+    res.status(500).json({ message: 'Failed to fetch cart' });
+  }
+});
+
+// Add item (upsert by productId, increment quantity)
+app.post('/api/cart/:cartId/add', async (req, res) => {
+  try {
+    const { cartId } = req.params;
+    const { productId, name, price, imageUrl, quantity = 1, categoryName } = req.body || {};
+    if (!productId || !name) return res.status(400).json({ message: 'productId and name are required' });
+    const itemRef = child(dbRef, `${cartItemsPath(cartId)}/${productId}`);
+    const snap = await get(itemRef);
+    const existing = snap.exists() ? snap.val() : null;
+    const newQty = (existing?.quantity || 0) + Number(quantity || 1);
+    const item = {
+      productId,
+      name,
+      price: Number(price) || 0,
+      quantity: newQty,
+      ...(imageUrl ? { imageUrl } : {}),
+      ...(categoryName ? { categoryName } : {}),
+    };
+    await set(itemRef, item);
+    res.status(201).json(item);
+  } catch (err) {
+    console.error('POST /api/cart/:cartId/add error:', err);
+    res.status(500).json({ message: 'Failed to add to cart' });
+  }
+});
+
+// Update item quantity (set absolute quantity)
+app.put('/api/cart/:cartId/items/:productId', async (req, res) => {
+  try {
+    const { cartId, productId } = req.params;
+    const { quantity } = req.body || {};
+    if (quantity == null) return res.status(400).json({ message: 'quantity is required' });
+    await update(child(dbRef, `${cartItemsPath(cartId)}/${productId}`), { quantity: Number(quantity) || 0 });
+    const snap = await get(child(dbRef, `${cartItemsPath(cartId)}/${productId}`));
+    if (!snap.exists()) return res.status(404).json({ message: 'Not found' });
+    res.json(snap.val());
+  } catch (err) {
+    console.error('PUT /api/cart/:cartId/items/:productId error:', err);
+    res.status(500).json({ message: 'Failed to update cart item' });
+  }
+});
+
+// Remove item
+app.delete('/api/cart/:cartId/items/:productId', async (req, res) => {
+  try {
+    const { cartId, productId } = req.params;
+    await remove(child(dbRef, `${cartItemsPath(cartId)}/${productId}`));
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    console.error('DELETE /api/cart/:cartId/items/:productId error:', err);
+    res.status(500).json({ message: 'Failed to delete cart item' });
+  }
+});
+
+// Clear cart
+app.delete('/api/cart/:cartId', async (req, res) => {
+  try {
+    const { cartId } = req.params;
+    await remove(child(dbRef, cartItemsPath(cartId)));
+    res.json({ message: 'Cleared' });
+  } catch (err) {
+    console.error('DELETE /api/cart/:cartId error:', err);
+    res.status(500).json({ message: 'Failed to clear cart' });
+  }
+});
+
+// Create order from cart
+app.post('/api/orders', async (req, res) => {
+  try {
+    const { cartId, customerName, table, restaurantId = 'default' } = req.body || {};
+    if (!cartId || !customerName || !table) return res.status(400).json({ message: 'cartId, customerName and table are required' });
+    const snap = await get(child(dbRef, cartItemsPath(cartId)));
+    const itemsObj = snap.exists() ? snap.val() : {};
+    const items = Object.values(itemsObj || {});
+    if (items.length === 0) return res.status(400).json({ message: 'Cart is empty' });
+    const total = items.reduce((acc, it) => acc + Number(it.price || 0) * Number(it.quantity || 0), 0);
+    const order = {
+      customerName,
+      table,
+      restaurantId,
+      items,
+      total: Number(total.toFixed(2)),
+      status: 'pending',
+      createdAt: Date.now(),
+    };
+    const newRef = push(child(dbRef, 'orders'));
+    await set(newRef, order);
+    // clear cart after order
+    await remove(child(dbRef, cartItemsPath(cartId)));
+    res.status(201).json({ id: newRef.key, ...order });
+  } catch (err) {
+    console.error('POST /api/orders error:', err);
+    res.status(500).json({ message: 'Failed to create order' });
+  }
+});
 // ---------------------------------------------------------------------------
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+}
+module.exports = app;
