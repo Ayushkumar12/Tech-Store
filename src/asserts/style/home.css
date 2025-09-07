@@ -46,24 +46,34 @@ main {
 .collection {
   display: flex;
   flex-direction: column;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
 }
 .collection h2 {
-  font-size: 2.5rem;
-  width: fit-content;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1f2937; /* slate-800 */
+  margin: 4px 0 8px;
+  text-align: center;
 }
 .menu {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  list-style-type: none;
-  margin: 10px;
+  /* Responsive grid for product cards */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  list-style: none;
+  margin: 8px 0 0;
   padding: 0;
+  width: 100%;
 }
+/* tighten inner spacing inside cards */
 .menu *{
-  padding: 5px;
+  padding: 0;
 }
 .cart-head{
   background-color: rgb(70, 70, 248);
@@ -145,24 +155,48 @@ form input {
   margin-left: 20px;
 }
 .food {
-  width: fit-content;
-  background-color: rgb(206, 230, 252);
-  margin: 10px;
-  /* border: 1px solid rgb(39, 39, 39); */
-  border-radius: 20px;
-  padding: 15px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb; /* gray-200 */
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.food:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+.food h3 {
+  margin: 8px 0 4px;
+  font-size: 1.1rem;
+  color: #111827; /* gray-900 */
+}
+.food p {
+  margin: 2px 0;
+  color: #374151; /* gray-700 */
+  font-size: 0.95rem;
+}
+.menuimg {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #f3f4f6; /* gray-100 */
 }
 .food button {
-  background-color: rgb(76, 76, 240);
-  border-radius: 20px;
-  color: white;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  border-radius: 12px;
+  color: #ffffff;
   border: none;
-  padding: 10px;
+  padding: 10px 12px;
   width: 100%;
-  font-weight: bold;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
+  transition: filter 0.2s ease, transform 0.1s ease;
 }
+.food button:hover { filter: brightness(1.05); }
+.food button:active { transform: translateY(1px); }
 
 .sub {
   border-radius: 20px;
