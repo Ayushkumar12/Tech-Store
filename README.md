@@ -85,7 +85,7 @@ export const firebaseConfig = {
    npm start
    ```
 4. Open the app at:
-   - http://localhost:3000/
+   - https://tech-store-2.onrender.com/
 
 ## Available Scripts
 - `npm start` — start CRA dev server

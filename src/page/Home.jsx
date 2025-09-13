@@ -23,7 +23,7 @@ function Home() {
       const name = String(product.name || product.dish_Name || "Unnamed");
       const price = Number(product.price ?? product.dish_Price ?? 0) || 0;
       if (!productId) { console.warn("Missing productId for add-to-cart"); return; }
-      await fetch(`http://localhost:3000/api/cart/${cartId}/items`, {
+      await fetch(`https://tech-store-2.onrender.com/api/cart/${cartId}/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, name, price, quantity: 1 })
@@ -57,10 +57,6 @@ function Home() {
     };
     load();
   }, []);
-
-
-
-
 
   return (
     <section>
