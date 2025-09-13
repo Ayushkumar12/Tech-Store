@@ -56,13 +56,8 @@ function Home() {
     const load = async () => {
       try {
         const [resP, resC] = await Promise.all([
-<<<<<<< HEAD
           fetch("https://tech-store-2.onrender.com/api/products"),
           fetch("https://tech-store-2.onrender.com/api/categories"),
-=======
-          fetch("https://tech-store-navy.vercel.app:2000/api/products"),
-          fetch("https://tech-store-navy.vercel.app:2000/api/categories"),
->>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
         ]);
         const [dataP, dataC] = await Promise.all([resP.json(), resC.json()]);
         setProducts(Array.isArray(dataP) ? dataP : []);
