@@ -20,7 +20,6 @@ function Home() {
 
   const [clickEffect] = useState(false);
 
-<<<<<<< HEAD
   // simple cartId for now
   const cartId = useMemo(() => "default", []);
 
@@ -41,11 +40,6 @@ function Home() {
     } catch (e) {
       console.error("Failed to add to cart", e);
     }
-=======
-  // Minimal placeholder to avoid no-undef; integrate API later
-  const handleAddToCart = (product) => {
-    // no-op for now
->>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
   };
   
   
