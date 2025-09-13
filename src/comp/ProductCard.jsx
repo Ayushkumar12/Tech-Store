@@ -5,7 +5,6 @@ function ProductCard({ product, onAdd }) {
   const name = String(product?.name || product?.dish_Name || "Unnamed");
   const priceRaw = product?.price ?? product?.dish_Price ?? 0;
   const price = Number(priceRaw);
-<<<<<<< HEAD
   const category = product?.categoryName || product?.category?.name || "";
   const imageUrl =
     product?.imageUrl || product?.image || product?.imgUrl || product?.imageURL || "";
@@ -13,12 +12,6 @@ function ProductCard({ product, onAdd }) {
   const formattedPrice = Number.isFinite(price)
     ? new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(price)
     : "-";
-=======
-  const category = product?.categoryName || "";
-  const imageUrl = product?.imageUrl || "";
-
-  const formattedPrice = isNaN(price) ? "-" : price.toFixed(2);
->>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
 
   return (
     <article className="product-card" aria-label={name}>
@@ -39,7 +32,6 @@ function ProductCard({ product, onAdd }) {
       </div>
 
       <div className="product-footer">
-<<<<<<< HEAD
         <span className="price">{formattedPrice}</span>
         <button
           className="add-btn"
@@ -47,10 +39,6 @@ function ProductCard({ product, onAdd }) {
           type="button"
           aria-label={`Add ${name} to cart`}
         >
-=======
-        <span className="price">${formattedPrice}</span>
-        <button className="add-btn" onClick={onAdd} type="button">
->>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
           Add to Cart
         </button>
       </div>

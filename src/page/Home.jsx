@@ -3,9 +3,6 @@ import Footer from '../comp/Footer';
 import Navbar from "../comp/Navbar";
 import ProductCard from "../comp/ProductCard";
 import "../asserts/style/home.css";
-
-
-
 function Home() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
