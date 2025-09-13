@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useState, useEffect, useMemo } from "react";
+=======
+import React, { useState, useEffect } from "react";
+>>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
 import Footer from '../comp/Footer';
 import Navbar from "../comp/Navbar";
 import ProductCard from "../comp/ProductCard";
@@ -16,6 +20,7 @@ function Home() {
 
   const [clickEffect] = useState(false);
 
+<<<<<<< HEAD
   // simple cartId for now
   const cartId = useMemo(() => "default", []);
 
@@ -36,6 +41,11 @@ function Home() {
     } catch (e) {
       console.error("Failed to add to cart", e);
     }
+=======
+  // Minimal placeholder to avoid no-undef; integrate API later
+  const handleAddToCart = (product) => {
+    // no-op for now
+>>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
   };
   
   
@@ -46,8 +56,13 @@ function Home() {
     const load = async () => {
       try {
         const [resP, resC] = await Promise.all([
+<<<<<<< HEAD
           fetch("https://tech-store-2.onrender.com/api/products"),
           fetch("https://tech-store-2.onrender.com/api/categories"),
+=======
+          fetch("https://tech-store-navy.vercel.app:2000/api/products"),
+          fetch("https://tech-store-navy.vercel.app:2000/api/categories"),
+>>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
         ]);
         const [dataP, dataC] = await Promise.all([resP.json(), resC.json()]);
         setProducts(Array.isArray(dataP) ? dataP : []);
@@ -94,6 +109,7 @@ function Home() {
             <ul className="menu">
               {Array.isArray(products) && products.length > 0 ? (
                 products
+<<<<<<< HEAD
                   .filter((p) => {
                     if (!selectedCategory) return true;
                     const pid = String(p.categoryId ?? p.category?.id ?? "");
@@ -119,6 +135,26 @@ function Home() {
                       </li>
                     );
                   })
+=======
+                  .filter((p) => !selectedCategory || p.categoryId === selectedCategory)
+                  .filter((p) => {
+                    const q = searchQuery.trim().toLowerCase();
+                    if (!q) return true;
+                    const name = String(p.name || p.dish_Name || '').toLowerCase();
+                    return name.includes(q);
+                  })
+                  .sort((a, b) => {
+                    if (!sortOrder) return 0;
+                    const pa = Number(a.price) || 0;
+                    const pb = Number(b.price) || 0;
+                    return sortOrder === 'asc' ? pa - pb : pb - pa;
+                  })
+                  .map((product) => (
+                    <li key={product.productId} className="food" style={{ listStyle: 'none' }}>
+                      <ProductCard product={product} onAdd={() => { /* TODO: implement add-to-cart here or navigate to Cart */ }} />
+                    </li>
+                  ))
+>>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
               ) : (
                 <p>No products available.</p>
               )}
