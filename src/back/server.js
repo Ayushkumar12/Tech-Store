@@ -18,9 +18,40 @@ const firebaseConfig = {
   measurementId: 'G-X186F4PB2Q'
 };
 
+// Initialize Firebase once and reuse connection
 const appFirebase = initializeApp(firebaseConfig);
 const database = getDatabase(appFirebase);
 const dbRef = ref(database);
+
+// In-memory cache for frequently accessed data
+const cache = {
+  products: null,
+  categories: null,
+  lastProductsUpdate: 0,
+  lastCategoriesUpdate: 0,
+  TTL: 30000 // 30 seconds cache TTL
+};
+
+// Cache helper functions
+const isCacheValid = (lastUpdate) => {
+  return Date.now() - lastUpdate < cache.TTL;
+};
+
+const getCachedProducts = () => {
+  if (cache.products && isCacheValid(cache.lastProductsUpdate)) {
+    console.log('Returning cached products');
+    return cache.products;
+  }
+  return null;
+};
+
+const getCachedCategories = () => {
+  if (cache.categories && isCacheValid(cache.lastCategoriesUpdate)) {
+    console.log('Returning cached categories');
+    return cache.categories;
+  }
+  return null;
+};
 
 // Seed default categories if missing (idempotent)
 (async () => {
@@ -48,6 +79,76 @@ app.use((req, res, next) => {
   next();
 });
 
+// Special endpoint for initial data loading - combines products and categories
+app.get('/api/initial-data', async (req, res) => {
+  try {
+    console.log('Fetching initial data (products + categories)...');
+    const startTime = Date.now();
+    
+    // Check cache first
+    const cachedProducts = getCachedProducts();
+    const cachedCategories = getCachedCategories();
+    
+    if (cachedProducts && cachedCategories) {
+      console.log('Returning cached initial data');
+      return res.json({
+        products: cachedProducts,
+        categories: cachedCategories,
+        cached: true
+      });
+    }
+    
+    // Fetch both in parallel with timeout
+    const [productsSnap, categoriesSnap] = await Promise.race([
+      Promise.all([
+        get(child(dbRef, 'products')),
+        get(child(dbRef, 'categories'))
+      ]),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Firebase timeout')), 10000)
+      )
+    ]);
+    
+    const products = toProductsArray(productsSnap);
+    const categories = toArray(categoriesSnap);
+    
+    // Update cache
+    cache.products = products;
+    cache.categories = categories;
+    cache.lastProductsUpdate = Date.now();
+    cache.lastCategoriesUpdate = Date.now();
+    
+    const fetchTime = Date.now() - startTime;
+    console.log(`Initial data fetched in ${fetchTime}ms`);
+    
+    res.json({
+      products,
+      categories,
+      cached: false,
+      fetchTime
+    });
+  } catch (err) {
+    console.error('GET /api/initial-data error:', err);
+    
+    // Return any cached data available
+    const response = {};
+    if (cache.products) response.products = cache.products;
+    if (cache.categories) response.categories = cache.categories;
+    
+    if (Object.keys(response).length > 0) {
+      console.log('Returning partial cached data due to error');
+      response.error = err.message;
+      response.cached = true;
+      return res.json(response);
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to fetch initial data',
+      error: err.message 
+    });
+  }
+});
+
 // Helpers
 const toProductsArray = (snap) => {
   if (!snap.exists()) return [];
@@ -72,14 +173,49 @@ const toProductsArray = (snap) => {
 };
 
 // CRUD API for products
-// GET all products
+// GET all products - optimized with caching
 app.get('/api/products', async (req, res) => {
   try {
-    const snap = await get(child(dbRef, 'products'));
-    res.json(toProductsArray(snap));
+    // Try cache first
+    const cachedProducts = getCachedProducts();
+    if (cachedProducts) {
+      return res.json(cachedProducts);
+    }
+
+    console.log('Fetching products from Firebase...');
+    const startTime = Date.now();
+    
+    // Fetch from Firebase with timeout
+    const snap = await Promise.race([
+      get(child(dbRef, 'products')),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Firebase timeout')), 10000)
+      )
+    ]);
+    
+    const products = toProductsArray(snap);
+    
+    // Update cache
+    cache.products = products;
+    cache.lastProductsUpdate = Date.now();
+    
+    const fetchTime = Date.now() - startTime;
+    console.log(`Products fetched in ${fetchTime}ms, cached for ${cache.TTL}ms`);
+    
+    res.json(products);
   } catch (err) {
     console.error('GET /api/products error:', err);
-    res.status(500).json({ message: 'Failed to fetch products' });
+    
+    // Return cached data if available, even if expired
+    if (cache.products) {
+      console.log('Returning expired cache due to error');
+      return res.json(cache.products);
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to fetch products',
+      error: err.message 
+    });
   }
 });
 
@@ -121,6 +257,12 @@ app.post('/api/products', async (req, res) => {
     };
     const newRef = push(child(dbRef, 'products'));
     await set(newRef, product);
+    
+    // Invalidate products cache
+    cache.products = null;
+    cache.lastProductsUpdate = 0;
+    console.log('Products cache invalidated due to creation');
+    
     res.status(201).json({ id: newRef.key, ...product });
   } catch (err) {
     console.error('POST /api/products error:', err);
@@ -134,6 +276,12 @@ app.put('/api/products/:id', async (req, res) => {
     const { id } = req.params;
     const updates = req.body || {};
     await update(child(dbRef, `products/${id}`), updates);
+    
+    // Invalidate products cache
+    cache.products = null;
+    cache.lastProductsUpdate = 0;
+    console.log('Products cache invalidated due to update');
+    
     const snap = await get(child(dbRef, `products/${id}`));
     if (!snap.exists()) return res.status(404).json({ message: 'Not found' });
     res.json({ id, ...snap.val() });
@@ -148,6 +296,12 @@ app.delete('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
     await remove(child(dbRef, `products/${id}`));
+    
+    // Invalidate products cache
+    cache.products = null;
+    cache.lastProductsUpdate = 0;
+    console.log('Products cache invalidated due to deletion');
+    
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('DELETE /api/products/:id error:', err);
@@ -164,11 +318,46 @@ const toArray = (snap) => {
 
 app.get('/api/categories', async (req, res) => {
   try {
-    const snap = await get(child(dbRef, 'categories'));
-    res.json(toArray(snap));
+    // Try cache first
+    const cachedCategories = getCachedCategories();
+    if (cachedCategories) {
+      return res.json(cachedCategories);
+    }
+
+    console.log('Fetching categories from Firebase...');
+    const startTime = Date.now();
+    
+    // Fetch from Firebase with timeout
+    const snap = await Promise.race([
+      get(child(dbRef, 'categories')),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Firebase timeout')), 5000)
+      )
+    ]);
+    
+    const categories = toArray(snap);
+    
+    // Update cache
+    cache.categories = categories;
+    cache.lastCategoriesUpdate = Date.now();
+    
+    const fetchTime = Date.now() - startTime;
+    console.log(`Categories fetched in ${fetchTime}ms, cached for ${cache.TTL}ms`);
+    
+    res.json(categories);
   } catch (err) {
     console.error('GET /api/categories error:', err);
-    res.status(500).json({ message: 'Failed to fetch categories' });
+    
+    // Return cached data if available, even if expired
+    if (cache.categories) {
+      console.log('Returning expired cache due to error');
+      return res.json(cache.categories);
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to fetch categories',
+      error: err.message 
+    });
   }
 });
 
@@ -179,6 +368,12 @@ app.post('/api/categories', async (req, res) => {
     const newRef = push(child(dbRef, 'categories'));
     const category = { name, description };
     await set(newRef, category);
+    
+    // Invalidate categories cache
+    cache.categories = null;
+    cache.lastCategoriesUpdate = 0;
+    console.log('Categories cache invalidated due to creation');
+    
     res.status(201).json({ id: newRef.key, ...category });
   } catch (err) {
     console.error('POST /api/categories error:', err);

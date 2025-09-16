@@ -3,6 +3,13 @@ main {
   background-repeat: no-repeat;
   height: fit-content;
 }
+
+/* Loading spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .first {
   height: 70dvh;
   display: flex;
@@ -198,7 +205,6 @@ form input {
 .food button:hover { filter: brightness(1.05); }
 .food button:active { transform: translateY(1px); }
 
-<<<<<<< HEAD
 /* Product card layout refinements */
 .product-card {
   display: flex;
@@ -258,8 +264,6 @@ form input {
 }
 .add-btn { width: 100%; }
 
-=======
->>>>>>> 983823a2331eb30951e36aa5fd76bfe556695bcc
 .sub {
   border-radius: 20px;
   border: none;
