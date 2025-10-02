@@ -1,0 +1,62 @@
+.start{
+    color: antiquewhite;
+    background-color: brown;
+}
+.greet{
+    height: 40dvh;
+    display: flex;
+    align-items: flex-end;
+}
+.home5 {
+    margin-top: 10px;
+    background-color: aliceblue;
+    border-radius: 20px;
+    display: flex;
+    color: black;
+  }
+
+.greet h2{
+    margin: 20px;
+    font-size: 2.5rem;
+}
+
+.add{
+    display: flex;
+    flex-direction: column;
+    align-content: flex-start;
+    flex-wrap: wrap;
+    margin-left: 20px;
+}
+.menuimg{
+    height: 200px;
+    width: 250px;
+    background-size: contain;
+    background-position: center;
+    border-radius: 20px;
+}
+.add label{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+}
+.add h4{
+    width: 100%;
+    font-size: 1.2rem;
+}
+.add input{
+    height: 100%;
+}
+.dish{
+    background-color: rgb(76, 76, 240);
+    border-radius: 20px;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+}
+.add *{
+    margin: 5px;
+}

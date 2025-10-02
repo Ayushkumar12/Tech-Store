@@ -1,0 +1,25 @@
+nav{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: absolute;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.089);
+    backdrop-filter: blur( 2px );
+    color:white;
+    padding: 20px;
+}
+nav img{
+    width: 60px;
+    height: 60px;
+}
+.log{
+
+    margin: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+    text-decoration: none;
+    
+}

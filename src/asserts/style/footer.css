@@ -1,0 +1,64 @@
+
+footer{
+    background-color: rgb(1, 24, 7);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    height: 70dvh;
+    margin: 0px;
+}
+footer h4{
+    margin: 20px;
+    padding: 20px;
+    font-size: 2.5rem;
+    text-decoration: underline;
+}
+.sociolinks{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 10px;
+}
+.sociolinks a{
+    padding: 5px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 25px;
+    height: 25px;
+    border: solid white;
+    transition: background-color 0.3s ease;
+    color: white;
+    text-decoration: none;
+    margin: 10px 10px;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: small;
+}
+.sociolinks img{
+    width: 25px;
+    height: 25px;
+    color: white;
+}
+.sociolinks a:hover{
+    background-color: white;
+    color: rgb(1, 24, 7);
+}
+.footlinks a{
+    color: white;
+    text-decoration: none;
+    margin: 10px 10px;
+    font-weight: 500;
+    padding: 10px 10px;
+}
+footer hr{
+    width: 90%;
+    border: 1px solid white;
+    margin: 20px 0px;
+}
