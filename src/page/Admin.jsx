@@ -61,7 +61,7 @@ export default function Admin() {
       const imageUrl = await getDownloadURL(storageReference);
 
       // Create product via backend API
-      const res = await fetch("https://tech-store-2.onrender.com/api/products", {
+      const res = await fetch("https://tech-store-txuf.onrender.com//api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, price, productId, imageUrl, categoryId, categoryName: (categories.find(c => c.id === categoryId)?.name) || undefined })
@@ -82,7 +82,7 @@ export default function Admin() {
 
   const handleRemoveMenuItem = async (id) => {
     try {
-      const res = await fetch(`https://tech-store-2.onrender.com/api/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`https://tech-store-txuf.onrender.com//api/products/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       alert('Menu item deleted successfully');
       fetchMenu();
