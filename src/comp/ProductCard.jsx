@@ -10,7 +10,7 @@ function ProductCard({ product, onAdd }) {
     product?.imageUrl || product?.image || product?.imgUrl || product?.imageURL || "";
 
   const formattedPrice = Number.isFinite(price)
-    ? new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(price)
+    ? new Intl.NumberFormat(undefined, { style: "currency", currency: "INR" }).format(price)
     : "-";
 
   return (
