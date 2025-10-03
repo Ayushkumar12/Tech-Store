@@ -53,7 +53,7 @@ export default function Seller() {
       const imageUrl = await getDownloadURL(storageReference);
 
       // Create product via backend API
-      await fetch("https://tech-store-txuf.onrender.com//api/products", {
+      await fetch("https://tech-store-txuf.onrender.com/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -85,7 +85,7 @@ export default function Seller() {
         alert("You can only remove your own products");
         return;
       }
-      const res = await fetch(`https://tech-store-txuf.onrender.com//api/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`https://tech-store-txuf.onrender.com/api/products/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       alert("Product removed");
       // Refresh
@@ -134,7 +134,7 @@ export default function Seller() {
         categoryName: (categories.find(c => c.id === editCategoryId)?.name) || undefined,
         imageUrl,
       };
-      const res = await fetch(`https://tech-store-txuf.onrender.com//api/products/${editingId}`, {
+      const res = await fetch(`https://tech-store-txuf.onrender.com/api/products/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -154,8 +154,8 @@ export default function Seller() {
     const load = async () => {
       try {
         const [resP, resC] = await Promise.all([
-          fetch("https://tech-store-txuf.onrender.com//api/products"),
-          fetch("https://tech-store-txuf.onrender.com//api/categories"),
+          fetch("https://tech-store-txuf.onrender.com/api/products"),
+          fetch("https://tech-store-txuf.onrender.com/api/categories"),
         ]);
         const [dataP, dataC] = await Promise.all([resP.json(), resC.json()]);
         const items = (Array.isArray(dataP) ? dataP : []).map(p => ({ key: p.id, ...p }));

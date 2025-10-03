@@ -16,7 +16,7 @@ export default function Order() {
 
   const handleDeleteOrder = async (orderId) => {
     try {
-      const res = await fetch(`https://tech-store-txuf.onrender.com//api/orders/${orderId}/status`, {
+      const res = await fetch(`https://tech-store-txuf.onrender.com/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'done' })
@@ -33,7 +33,7 @@ export default function Order() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("https://tech-store-txuf.onrender.com//api/orders");
+      const res = await fetch("https://tech-store-txuf.onrender.com/api/orders");
       const data = await res.json();
       const arr = Array.isArray(data) ? data : [];
       setorders(arr);

@@ -16,7 +16,7 @@ function Cart() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://tech-store-txuf.onrender.com//api/cart/${cartId}`);
+      const res = await fetch(`https://tech-store-txuf.onrender.com/api/cart/${cartId}`);
       const data = await res.json();
       setItems(Array.isArray(data.items) ? data.items : []);
       setTotal(Number(data.total || 0));
@@ -31,7 +31,7 @@ function Cart() {
 
   const updateQty = async (productId, quantity) => {
     try {
-      await fetch(`https://tech-store-txuf.onrender.com//api/cart/${cartId}/items/${productId}`, {
+      await fetch(`https://tech-store-txuf.onrender.com/api/cart/${cartId}/items/${productId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ quantity })
@@ -42,14 +42,14 @@ function Cart() {
 
   const removeItem = async (productId) => {
     try {
-      await fetch(`https://tech-store-txuf.onrender.com//api/cart/${cartId}/items/${productId}`, { method: "DELETE" });
+      await fetch(`https://tech-store-txuf.onrender.com/api/cart/${cartId}/items/${productId}`, { method: "DELETE" });
       await load();
     } catch (e) { console.error(e); }
   };
 
   const clearCart = async () => {
     try {
-      await fetch(`https://tech-store-txuf.onrender.com//api/cart/${cartId}`, { method: "DELETE" });
+      await fetch(`https://tech-store-txuf.onrender.com/api/cart/${cartId}`, { method: "DELETE" });
       await load();
     } catch (e) { console.error(e); }
   };
@@ -57,7 +57,7 @@ function Cart() {
   const placeOrder = async () => {
     if (!customerName || !table) { alert("Enter name and table"); return; }
     try {
-      const res = await fetch("https://tech-store-txuf.onrender.com//api/orders", {
+      const res = await fetch("https://tech-store-txuf.onrender.com/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cartId, customerName, table, restaurantId: "12345" })

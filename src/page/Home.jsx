@@ -30,7 +30,7 @@ function Home() {
       // Use local server in development for better performance
       const baseUrl = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' 
         ? 'http://localhost:2000'
-        : 'https://tech-store-txuf.onrender.com/';
+        : 'https://tech-store-txuf.onrender.com';
       
       await fetch(`${baseUrl}/api/cart/${cartId}/items`, {
         method: "POST",
@@ -56,7 +56,7 @@ function Home() {
       // Use local server in development for better performance
       const baseUrl = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' 
         ? 'http://localhost:2000'
-        : 'https://tech-store-txuf.onrender.com/';
+        : 'https://tech-store-txuf.onrender.com';
       
       // Use the new optimized endpoint that fetches both products and categories
       const response = await fetch(`${baseUrl}/api/initial-data`, {
@@ -101,7 +101,7 @@ function Home() {
           console.log('Trying fallback individual endpoints...');
           const baseUrl = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' 
             ? 'http://localhost:2000'
-            : 'https://tech-store-txuf.onrender.com/';
+            : 'https://tech-store-txuf.onrender.com';
           const [resP, resC] = await Promise.all([
             fetch(`${baseUrl}/api/products`),
             fetch(`${baseUrl}/api/categories`),
