@@ -1,62 +1,104 @@
-.start{
-    color: antiquewhite;
-    background-color: brown;
-}
-.greet{
-    height: 40dvh;
-    display: flex;
-    align-items: flex-end;
-}
-.home5 {
-    margin-top: 10px;
-    background-color: aliceblue;
-    border-radius: 20px;
-    display: flex;
-    color: black;
-  }
-
-.greet h2{
-    margin: 20px;
-    font-size: 2.5rem;
+.admin-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-.add{
-    display: flex;
-    flex-direction: column;
-    align-content: flex-start;
-    flex-wrap: wrap;
-    margin-left: 20px;
+.admin-form__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
-.menuimg{
-    height: 200px;
-    width: 250px;
-    background-size: contain;
-    background-position: center;
-    border-radius: 20px;
+
+.admin-form__submit {
+  justify-self: flex-start;
 }
-.add label{
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    align-items: center;
+
+.file-input input[type="file"] {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1rem;
+  background: rgba(37, 99, 235, 0.06);
 }
-.add h4{
-    width: 100%;
-    font-size: 1.2rem;
+
+.admin-inventory__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
 }
-.add input{
-    height: 100%;
+
+.admin-grid {
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
-.dish{
-    background-color: rgb(76, 76, 240);
-    border-radius: 20px;
-    color: white;
-    border: none;
-    padding: 10px;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
+
+.admin-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-sm);
 }
-.add *{
-    margin: 5px;
+
+.admin-card__body,
+.admin-card__editing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.admin-card__image {
+  width: 100%;
+  height: 200px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-card__placeholder {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.admin-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-card__price {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.admin-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.admin-card__delete {
+  background: linear-gradient(135deg, var(--color-danger), #ef4444);
+}
+
+.admin-empty {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl) var(--space-xl);
 }

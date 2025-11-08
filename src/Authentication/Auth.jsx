@@ -1,9 +1,9 @@
-import '../asserts/style/auth.css';
 import React, { useState } from "react";
 import { initializeApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { getDatabase, ref, set, get } from "firebase/database";
 import { useNavigate } from 'react-router-dom';
+import '../asserts/style/auth.css';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDlRqiS3HiU4BWyWrHvASO5VLRx5vy7Haw",
@@ -16,7 +16,6 @@ const firebaseConfig = {
   measurementId: "G-X186F4PB2Q"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const database = getDatabase(app);
@@ -26,7 +25,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setName] = useState("");
-  const [role, setRole] = useState('customer'); // customer | seller | admin
+  const [role, setRole] = useState('customer');
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -46,7 +45,6 @@ const Auth = () => {
       setError("");
       const cred = await signInWithEmailAndPassword(auth, email, password);
       sessionStorage.setItem("Auth Token", cred.user.refreshToken);
-      alert("Login successful!");
       await routeByRole(cred.user.uid);
     } catch (error) {
       setError(error.message);
@@ -55,6 +53,7 @@ const Auth = () => {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
+    setError("");
   };
 
   const handleSignup = async (e) => {
@@ -72,11 +71,10 @@ const Auth = () => {
       await set(userRef, {
         displayName,
         email,
-        role, // save selected role
+        role,
       });
       setEmail("");
       setPassword("");
-      alert("User registered successfully");
       await routeByRole(user.uid);
     } catch (error) {
       setError(getErrorMessage(error.code));
@@ -99,61 +97,83 @@ const Auth = () => {
   };
 
   return (
-    <div className="body">
-      <div className="container">
-        <div className="form-container">
-          <div className="tabs">
-            <div className={`tab ${activeTab === 'login' ? 'active' : ''}`} onClick={() => handleTabClick('login')}>Login</div>
-            <div className={`tab ${activeTab === 'signup' ? 'active' : ''}`} onClick={() => handleTabClick('signup')}>Sign Up</div>
-          </div>
-
-          {/* Login Form */}
-          <form id="login-form" className={`form ${activeTab === 'login' ? 'active' : ''}`} onSubmit={handleLogin}>
-            <h2 className="form-title">Welcome Back</h2>
-            <div className="form-group">
-              <label htmlFor="login-email">Email</label>
-              <input type="email" id="login-email" className="form-control" placeholder="Enter your email" value={email}
-                onChange={(e) => setEmail(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="login-password">Password</label>
-              <input type="password" id="login-password" className="form-control" placeholder="Enter your password" value={password}
-                onChange={(e) => setPassword(e.target.value)} required />
-            </div>
-            <button type="submit" className="btn">Login</button>
-            {error && <p style={{ color: "red" }}>{error}</p>}
-          </form>
-
-          {/* Signup Form */}
-          <form id="signup-form" className={`form ${activeTab === 'signup' ? 'active' : ''}`} onSubmit={handleSignup}>
-            <h2 className="form-title">Create Account</h2>
-            <div className="form-group">
-              <label htmlFor="signup-name">Full Name</label>
-              <input type="text" id="signup-name" className="form-control" placeholder="Enter your full name" value={displayName}
-                onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="signup-email">Email</label>
-              <input type="email" id="signup-email" className="form-control" placeholder="Enter your email" value={email}
-                onChange={(e) => setEmail(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="signup-password">Password</label>
-              <input type="password" id="signup-password" className="form-control" placeholder="Create a password" value={password}
-                onChange={(e) => setPassword(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="signup-role">Role</label>
-              <select id="signup-role" className="form-control" value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="customer">Customer</option>
-                <option value="seller">Seller</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <button type="submit" className="btn" disabled={loading}>Sign Up</button>
-            {error && <p style={{ color: "red" }}>{error}</p>}
-          </form>
+    <div className="auth-page">
+      <div className="auth-card surface surface--inset">
+        <div className="auth-header">
+          <h1>Tech Store</h1>
+          <p className="text-muted">Sign in or create an account to personalize your experience.</p>
         </div>
+
+        <div className="auth-tabs" role="tablist">
+          <button
+            type="button"
+            className={`auth-tab${activeTab === 'login' ? ' auth-tab--active' : ''}`}
+            onClick={() => handleTabClick('login')}
+            role="tab"
+            aria-selected={activeTab === 'login'}
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            className={`auth-tab${activeTab === 'signup' ? ' auth-tab--active' : ''}`}
+            onClick={() => handleTabClick('signup')}
+            role="tab"
+            aria-selected={activeTab === 'signup'}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        <form
+          id="login-form"
+          className={`auth-form${activeTab === 'login' ? ' auth-form--active' : ''}`}
+          onSubmit={handleLogin}
+        >
+          <h2>Welcome back</h2>
+          <label>
+            Email
+            <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label>
+            Password
+            <input type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </label>
+          <button type="submit" className="btn-primary auth-submit">Login</button>
+          {error && activeTab === 'login' && <p className="form-error">{error}</p>}
+        </form>
+
+        <form
+          id="signup-form"
+          className={`auth-form${activeTab === 'signup' ? ' auth-form--active' : ''}`}
+          onSubmit={handleSignup}
+        >
+          <h2>Create account</h2>
+          <label>
+            Full name
+            <input type="text" placeholder="Enter your full name" value={displayName} onChange={(e) => setName(e.target.value)} required />
+          </label>
+          <label>
+            Email
+            <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label>
+            Password
+            <input type="password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </label>
+          <label>
+            Role
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="customer">Customer</option>
+              <option value="seller">Seller</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+          <button type="submit" className="btn-primary auth-submit" disabled={loading}>
+            {loading ? 'Creating account...' : 'Sign up'}
+          </button>
+          {error && activeTab === 'signup' && <p className="form-error">{error}</p>}
+        </form>
       </div>
     </div>
   );

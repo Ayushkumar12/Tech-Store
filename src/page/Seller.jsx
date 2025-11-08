@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
-
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "../Authentication/Authpro";
 import Navbar from "../comp/Navbar";
+import Footer from "../comp/Footer";
 import "../asserts/style/admin.css";
-const { getDatabase } = require('firebase/database');
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyDlRqiS3HiU4BWyWrHvASO5VLRx5vy7Haw",
@@ -20,8 +18,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
 const storage = getStorage(app);
+const API_BASE = "https://tech-store-txuf.onrender.com/api";
 
 export default function Seller() {
   const { currentUser, username } = useAuth();
@@ -32,7 +30,7 @@ export default function Seller() {
   const [myProducts, setMyProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState("");
-  // Editing state
+
   const [editingId, setEditingId] = useState("");
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
@@ -41,10 +39,31 @@ export default function Seller() {
 
   const generateUniqueId = () => `prod_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const loadProducts = async () => {
+    try {
+      const [resProducts, resCategories] = await Promise.all([
+        fetch(`${API_BASE}/products`),
+        fetch(`${API_BASE}/categories`)
+      ]);
+      const [dataProducts, dataCategories] = await Promise.all([resProducts.json(), resCategories.json()]);
+      const items = (Array.isArray(dataProducts) ? dataProducts : []).map((p) => ({ key: p.id, ...p }));
+      const mine = uid ? items.filter((item) => item.sellerId === uid) : [];
+      setMyProducts(mine);
+      setCategories(Array.isArray(dataCategories) ? dataCategories : []);
+    } catch (error) {
+      setMyProducts([]);
+      setCategories([]);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, [uid]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (!name || !price || !image || !uid || !categoryId) {
-      alert("Please fill all fields, including category");
+      alert("Please fill out name, price, image, and category");
       return;
     }
     try {
@@ -52,8 +71,7 @@ export default function Seller() {
       await uploadBytes(storageReference, image);
       const imageUrl = await getDownloadURL(storageReference);
 
-      // Create product via backend API
-      await fetch("https://tech-store-txuf.onrender.com/api/products", {
+      await fetch(`${API_BASE}/products`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -64,7 +82,7 @@ export default function Seller() {
           sellerId: uid,
           sellerName: username || "Seller",
           categoryId: categoryId || undefined,
-          categoryName: (categories.find(c => c.id === categoryId)?.name) || undefined,
+          categoryName: categories.find((c) => c.id === categoryId)?.name || undefined
         })
       });
 
@@ -72,8 +90,9 @@ export default function Seller() {
       setName("");
       setPrice("");
       setImage(null);
-    } catch (err) {
-      console.error(err);
+      setCategoryId("");
+      await loadProducts();
+    } catch (error) {
       alert("Failed to add product");
     }
   };
@@ -85,23 +104,19 @@ export default function Seller() {
         alert("You can only remove your own products");
         return;
       }
-      const res = await fetch(`https://tech-store-txuf.onrender.com/api/products/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete');
-      alert("Product removed");
-      // Refresh
-      const refreshed = myProducts.filter(p => p.key !== id);
-      setMyProducts(refreshed);
-    } catch (err) {
-      console.error(err);
+      const res = await fetch(`${API_BASE}/products/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      setMyProducts((prev) => prev.filter((product) => product.key !== id));
+    } catch (error) {
       alert("Failed to remove product");
     }
   };
 
-  const beginEdit = (p) => {
-    setEditingId(p.key);
-    setEditName(p.name || p.dish_Name || "");
-    setEditPrice(String(p.price || p.dish_Price || ""));
-    setEditCategoryId(p.categoryId || "");
+  const beginEdit = (product) => {
+    setEditingId(product.key);
+    setEditName(product.name || product.dish_Name || "");
+    setEditPrice(String(product.price || product.dish_Price || ""));
+    setEditCategoryId(product.categoryId || "");
     setEditImage(null);
   };
 
@@ -115,7 +130,7 @@ export default function Seller() {
 
   const saveEdit = async () => {
     if (!editingId) return;
-    const item = myProducts.find(p => p.key === editingId);
+    const item = myProducts.find((p) => p.key === editingId);
     if (!item || item.sellerId !== uid) {
       alert("You can only edit your own products");
       return;
@@ -130,130 +145,152 @@ export default function Seller() {
       const payload = {
         name: editName,
         price: editPrice,
-        categoryId: editCategoryId,
-        categoryName: (categories.find(c => c.id === editCategoryId)?.name) || undefined,
-        imageUrl,
+        categoryId: editCategoryId || undefined,
+        categoryName: categories.find((c) => c.id === editCategoryId)?.name || undefined,
+        imageUrl
       };
-      const res = await fetch(`https://tech-store-txuf.onrender.com/api/products/${editingId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      const res = await fetch(`${API_BASE}/products/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Failed to update');
+      if (!res.ok) throw new Error("Failed to update");
       const updated = await res.json();
-      setMyProducts(prev => prev.map(p => p.key === editingId ? { ...p, ...updated, key: p.key } : p));
+      setMyProducts((prev) => prev.map((p) => (p.key === editingId ? { ...p, ...updated, key: p.key } : p)));
       cancelEdit();
-      alert('Product updated');
-    } catch (e) {
-      console.error(e);
-      alert('Failed to update product');
+      alert("Product updated");
+    } catch (error) {
+      alert("Failed to update product");
     }
   };
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [resP, resC] = await Promise.all([
-          fetch("https://tech-store-txuf.onrender.com/api/products"),
-          fetch("https://tech-store-txuf.onrender.com/api/categories"),
-        ]);
-        const [dataP, dataC] = await Promise.all([resP.json(), resC.json()]);
-        const items = (Array.isArray(dataP) ? dataP : []).map(p => ({ key: p.id, ...p }));
-        const mine = uid ? items.filter(i => i.sellerId === uid) : [];
-        setMyProducts(mine);
-        setCategories(Array.isArray(dataC) ? dataC : []);
-      } catch (e) {
-        console.error("Failed to load products/categories", e);
-        setMyProducts([]);
-        setCategories([]);
-      }
-    };
-    load();
-  }, [uid]);
-
   return (
-    <section className="start">
-      <Navbar/>
-      <div className="top">
-        <div className="greet">
-          <h2>Hello {username || "Seller"}, manage your products</h2>
-        </div>
-        <form className="add" onSubmit={handleSubmit}>
-          <label>
-            <h4>Product Name</h4>
-            <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-          </label>
-          <label>
-            <h4>Price</h4>
-            <input type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} required />
-          </label>
-          <label>
-            <h4>Image</h4>
-            <input type="file" onChange={(e) => setImage(e.target.files[0])} required />
-          </label>
-          <label>
-            <h4>Category</h4>
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-              <option value="">Select category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </label>
-          <button className="dish" type="submit">Add product</button>
-        </form>
-      </div>
+    <div className="admin-page">
+      <Navbar />
+      <main className="section">
+        <div className="layout-container stack-lg">
+          <header className="page-header">
+            <div>
+              <span className="page-kicker">Seller workspace</span>
+              <h1>Hello {username || "Seller"}</h1>
+              <p className="text-muted">Manage your personal inventory and keep products up to date.</p>
+            </div>
+          </header>
 
-      <section className="home collection">
-        <h2>My Products</h2>
-        <ul className="menu">
-          {myProducts.map((p) => (
-            <li key={p.key} className="food">
-              {editingId === p.key ? (
-                <>
-                  <img className="menuimg" src={p.imageUrl} alt={p.name || p.dish_Name} />
-                  <label>
-                    <h4>Name</h4>
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} />
-                  </label>
-                  <label>
-                    <h4>Price</h4>
-                    <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
-                  </label>
-                  <label>
-                    <h4>Category</h4>
-                    <select value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
-                      <option value="">Select category</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <h4>Change Image</h4>
-                    <input type="file" onChange={(e) => setEditImage(e.target.files[0])} />
-                  </label>
-                  <div style={{ display:'flex', gap:'8px' }}>
-                    <button onClick={saveEdit}>Save</button>
-                    <button onClick={cancelEdit}>Cancel</button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <img className="menuimg" src={p.imageUrl} alt={p.name || p.dish_Name} />
-                  <h3>{p.name || p.dish_Name}</h3>
-                  <p>Price: ${p.price || p.dish_Price}</p>
-                  {p.categoryName && <p>Category: {p.categoryName}</p>}
-                  <div style={{ display:'flex', gap:'8px' }}>
-                    <button onClick={() => beginEdit(p)}>Edit</button>
-                    <button onClick={() => handleRemove(p.key)}>Remove</button>
-                  </div>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-    </section>
+          <section className="surface surface--inset stack-md admin-form">
+            <div className="admin-form__header">
+              <h2>Add a new product</h2>
+              <p className="text-muted">Upload imagery, pricing, and assign a category.</p>
+            </div>
+            <form className="form-grid form-grid--auto" onSubmit={handleSubmit}>
+              <label>
+                Product name
+                <input type="text" placeholder="Mechanical keyboard" value={name} onChange={(e) => setName(e.target.value)} required />
+              </label>
+              <label>
+                Price
+                <input type="number" placeholder="12999" value={price} onChange={(e) => setPrice(e.target.value)} required />
+              </label>
+              <label className="file-input">
+                Product image
+                <input type="file" onChange={(e) => setImage(e.target.files[0])} required />
+              </label>
+              <label>
+                Category
+                <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
+                  <option value="">Select category</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </label>
+              <button className="btn-primary admin-form__submit" type="submit">Add product</button>
+            </form>
+          </section>
+
+          <section className="surface surface--inset stack-md admin-inventory">
+            <div className="admin-inventory__header">
+              <div>
+                <h2>Your products</h2>
+                <p className="text-muted">{myProducts.length} items published</p>
+              </div>
+              <button className="btn-secondary" type="button" onClick={loadProducts}>Refresh list</button>
+            </div>
+
+            {myProducts.length === 0 ? (
+              <div className="empty-state admin-empty">
+                <h3>No products yet</h3>
+                <p className="text-muted">Add your first product to start selling.</p>
+              </div>
+            ) : (
+              <ul className="admin-grid">
+                {myProducts.map((product) => (
+                  <li key={product.key} className="admin-card">
+                    {editingId === product.key ? (
+                      <div className="admin-card__editing stack-md">
+                        <div className="admin-card__image">
+                          {product.imageUrl ? (
+                            <img src={product.imageUrl} alt={product.name || product.dish_Name || "Product image"} />
+                          ) : (
+                            <div className="admin-card__placeholder">No image</div>
+                          )}
+                        </div>
+                        <div className="form-grid">
+                          <label>
+                            Name
+                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                          </label>
+                          <label>
+                            Price
+                            <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
+                          </label>
+                          <label>
+                            Category
+                            <select value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)}>
+                              <option value="">Select category</option>
+                              {categories.map((c) => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="file-input">
+                            Replace image
+                            <input type="file" onChange={(e) => setEditImage(e.target.files[0])} />
+                          </label>
+                        </div>
+                        <div className="admin-card__actions">
+                          <button className="btn-primary" type="button" onClick={saveEdit}>Save changes</button>
+                          <button className="btn-secondary" type="button" onClick={cancelEdit}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="admin-card__body stack-md">
+                        <div className="admin-card__image">
+                          {product.imageUrl ? (
+                            <img src={product.imageUrl} alt={product.name || product.dish_Name || "Product image"} />
+                          ) : (
+                            <div className="admin-card__placeholder">No image</div>
+                          )}
+                        </div>
+                        <div className="admin-card__content">
+                          <h3>{product.name || product.dish_Name}</h3>
+                          {product.categoryName ? <span className="badge">{product.categoryName}</span> : null}
+                          <p className="admin-card__price">₹{Number(product.price || product.dish_Price || 0).toFixed(2)}</p>
+                        </div>
+                        <div className="admin-card__actions">
+                          <button className="btn-secondary" type="button" onClick={() => beginEdit(product)}>Edit</button>
+                          <button className="btn-primary admin-card__delete" type="button" onClick={() => handleRemove(product.key)}>Remove</button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </main>
+      <Footer />
+    </div>
   );
 }

@@ -164,11 +164,7 @@ const toProductsArray = (snap) => {
     sellerId: item.sellerId,
     sellerName: item.sellerName,
     categoryId: item.categoryId,
-    categoryName: item.categoryName,
-    // keep originals in case UI still uses them
-    dish_Name: item.dish_Name,
-    dish_Price: item.dish_Price,
-    dish_Id: item.dish_Id,
+    categoryName: item.categoryName
   }));
 };
 
@@ -469,7 +465,7 @@ app.delete('/api/inventory/:productId', async (req, res) => {
 // Order statuses -------------------------------------------------------------
 app.get('/api/orders', async (req, res) => {
   try {
-    const snap = await get(child(dbRef, 'orders'));
+    const snap = await get(child(dbRef, 'tech-store-orders'));
     res.json(toArray(snap));
   } catch (err) {
     console.error('GET /api/orders error:', err);
@@ -482,7 +478,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body || {};
     if (!status) return res.status(400).json({ message: 'status is required' });
-    await update(child(dbRef, `orders/${id}`), { status });
+    await update(child(dbRef, `tech-store-orders/${id}`), { status });
     const snap = await get(child(dbRef, `orders/${id}`));
     if (!snap.exists()) return res.status(404).json({ message: 'Not found' });
     res.json({ id, ...snap.val() });
@@ -612,35 +608,7 @@ app.delete('/api/cart/:cartId', async (req, res) => {
   }
 });
 
-// Create order from cart
-app.post('/api/orders', async (req, res) => {
-  try {
-    const { cartId, customerName, table, restaurantId = 'default' } = req.body || {};
-    if (!cartId || !customerName || !table) return res.status(400).json({ message: 'cartId, customerName and table are required' });
-    const snap = await get(child(dbRef, cartItemsPath(cartId)));
-    const itemsObj = snap.exists() ? snap.val() : {};
-    const items = Object.values(itemsObj || {});
-    if (items.length === 0) return res.status(400).json({ message: 'Cart is empty' });
-    const total = items.reduce((acc, it) => acc + Number(it.price || 0) * Number(it.quantity || 0), 0);
-    const order = {
-      customerName,
-      table,
-      restaurantId,
-      items,
-      total: Number(total.toFixed(2)),
-      status: 'pending',
-      createdAt: Date.now(),
-    };
-    const newRef = push(child(dbRef, 'orders'));
-    await set(newRef, order);
-    // clear cart after order
-    await remove(child(dbRef, cartItemsPath(cartId)));
-    res.status(201).json({ id: newRef.key, ...order });
-  } catch (err) {
-    console.error('POST /api/orders error:', err);
-    res.status(500).json({ message: 'Failed to create order' });
-  }
-});
+
 // ---------------------------------------------------------------------------
 
 const PORT = process.env.PORT || 2000;

@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
-import Footer from '../comp/Footer';
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import Footer from "../comp/Footer";
 import Navbar from "../comp/Navbar";
 import ProductCard from "../comp/ProductCard";
 import "../asserts/style/home.css";
+import { useAuth } from "../Authentication/Authpro";
 
 function Home() {
   const [products, setProducts] = useState([]);
@@ -14,104 +16,80 @@ function Home() {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  const [clickEffect] = useState(false);
+  const { currentUser, loading: authLoading } = useAuth();
 
-  // simple cartId for now
-  const cartId = useMemo(() => "default", []);
+  const cartId = useMemo(() => {
+    if (!currentUser) return null;
+    return currentUser.uid || String(currentUser.email || "").replace(/[^a-z0-9]/gi, "");
+  }, [currentUser]);
 
-  // Hook up add-to-cart to backend cart API used by Cart.jsx
   const handleAddToCart = async (product) => {
     try {
-      const productId = product.productId || product.dish_Id || product.id || product._id;
-      const name = String(product.name || product.dish_Name || "Unnamed");
-      const price = Number(product.price ?? product.dish_Price ?? 0) || 0;
-      if (!productId) { console.warn("Missing productId for add-to-cart"); return; }
-      
-      // Use local server in development for better performance
-      const baseUrl = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:2000'
-        : 'https://tech-store-txuf.onrender.com';
-      
-      await fetch(`${baseUrl}/api/cart/${cartId}/items`, {
+      if (authLoading) {
+        alert("Please wait, we are still signing you in.");
+        return;
+      }
+
+      if (!currentUser || !cartId) {
+        alert("Log in to add items to your cart.");
+        return;
+      }
+
+      const productId = product.id;
+      const name = String(product.name);
+      const price = Number(product.price ?? 0) || 0;
+      if (!productId) return;
+
+      await fetch(`https://tech-store-txuf.onrender.com/api/cart/${cartId}/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, name, price, quantity: 1 })
       });
-      // Optionally show feedback
-      // alert(`${name} added to cart`);
     } catch (e) {
-      console.error("Failed to add to cart", e);
+      alert("Unable to add to cart right now.");
     }
   };
 
-  // Optimized data loading function
   const loadData = async (attempt = 1) => {
     try {
-      console.log(`Loading data - attempt ${attempt}`);
       setLoading(true);
       setError(null);
-      
-      const startTime = Date.now();
-      
-      // Use local server in development for better performance
-      const baseUrl = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:2000'
-        : 'https://tech-store-txuf.onrender.com';
-      
-      // Use the new optimized endpoint that fetches both products and categories
-      const response = await fetch(`${baseUrl}/api/initial-data`, {
+
+      const response = await fetch(`https://tech-store-txuf.onrender.com/api/initial-data`, {
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache"
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      const loadTime = Date.now() - startTime;
-      
-      console.log(`Data loaded in ${loadTime}ms from ${baseUrl}`, {
-        cached: data.cached,
-        products: data.products?.length || 0,
-        categories: data.categories?.length || 0
-      });
-      
       setProducts(Array.isArray(data.products) ? data.products : []);
       setCategories(Array.isArray(data.categories) ? data.categories : []);
-      setRetryCount(0); // Reset retry count on success
-      
+      setRetryCount(0);
     } catch (e) {
-      console.error(`Failed to load data (attempt ${attempt}):`, e);
       setError(e.message);
-      
-      // Auto-retry with exponential backoff for first few attempts
+
       if (attempt < 3) {
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-        console.log(`Retrying in ${delay}ms...`);
         setTimeout(() => {
           setRetryCount(attempt);
           loadData(attempt + 1);
         }, delay);
       } else {
-        // Final attempt - try individual endpoints as fallback
         try {
-          console.log('Trying fallback individual endpoints...');
-          const baseUrl = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' 
-            ? 'http://localhost:2000'
-            : 'https://tech-store-txuf.onrender.com';
           const [resP, resC] = await Promise.all([
-            fetch(`${baseUrl}/api/products`),
-            fetch(`${baseUrl}/api/categories`),
+            fetch(`https://tech-store-txuf.onrender.com/api/products`),
+            fetch(`https://tech-store-txuf.onrender.com/api/categories`)
           ]);
           const [dataP, dataC] = await Promise.all([resP.json(), resC.json()]);
           setProducts(Array.isArray(dataP) ? dataP : []);
           setCategories(Array.isArray(dataC) ? dataC : []);
           setError(null);
         } catch (fallbackError) {
-          console.error("Fallback also failed:", fallbackError);
           setProducts([]);
           setCategories([]);
         }
@@ -123,135 +101,143 @@ function Home() {
 
   useEffect(() => {
     loadData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Manual retry function
   const handleRetry = () => {
     loadData();
   };
 
+  const filteredProducts = useMemo(() => {
+    const list = Array.isArray(products) ? products : [];
+    return list
+      .filter((p) => {
+        if (!selectedCategory) return true;
+        const pid = String(p.categoryId ?? p.category?.id ?? "");
+        return String(selectedCategory) === pid;
+      })
+      .filter((p) => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return true;
+        const nm = String(p.name || p.dish_Name || "").toLowerCase();
+        return nm.includes(q);
+      })
+      .sort((a, b) => {
+        if (!sortOrder) return 0;
+        const pa = Number(a.price ?? a.dish_Price) || 0;
+        const pb = Number(b.price ?? b.dish_Price) || 0;
+        return sortOrder === "asc" ? pa - pb : pb - pa;
+      });
+  }, [products, selectedCategory, searchQuery, sortOrder]);
+
+  const isEmpty = !loading && !error && filteredProducts.length === 0;
+
   return (
-    <section>
-      <Navbar/>
-      <main>
-        <section className="first">
-          <div className="herotext">
-            <h1>Tech Store</h1>
+    <div className="home-page">
+      <Navbar />
+      <main className="home-page__main">
+        <section className="home-hero section">
+          <div className="layout-container home-hero__inner">
+            <div className="home-hero__content">
+              <span className="home-hero__eyebrow">Curated tech essentials</span>
+              <h1>Design your dream workspace</h1>
+              <p className="text-muted">
+                Discover premium gadgets, peripherals, and accessories selected to elevate every workflow.
+              </p>
+              <div className="home-hero__actions">
+                <a className="btn-primary" href="#catalog">Shop collection</a>
+                <Link className="btn-secondary" to="/seller">Become a seller</Link>
+              </div>
+            </div>
+            <div className="home-hero__metrics">
+              <div className="metric-card surface surface--inset">
+                <span className="metric-card__value">{products.length}</span>
+                <span className="metric-card__label">Products curated</span>
+              </div>
+              <div className="metric-card surface surface--inset">
+                <span className="metric-card__value">{categories.length}</span>
+                <span className="metric-card__label">Categories to explore</span>
+              </div>
+              <div className="metric-card surface surface--inset">
+                <span className="metric-card__value">{loading ? "Syncing" : "Live"}</span>
+                <span className="metric-card__label">Inventory status</span>
+              </div>
+            </div>
           </div>
         </section>
-        <section className="home">
-          <div className="collection">
-            <h2>Products</h2>
-            
-            {/* Loading State */}
-            {loading && (
-              <div style={{ textAlign: 'center', padding: '2rem' }}>
-                <div style={{ 
-                  display: 'inline-block', 
-                  width: '40px', 
-                  height: '40px', 
-                  border: '4px solid #f3f3f3',
-                  borderTop: '4px solid #3498db',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                  marginBottom: '1rem'
-                }} />
+
+        <section id="catalog" className="home-catalog section">
+          <div className="layout-container stack-lg">
+            <div className="home-catalog__header">
+              <div>
+                <h2>Shop the latest drops</h2>
+                <p className="text-muted">Filter by category, search by name, or sort by price to find the perfect fit.</p>
+              </div>
+            </div>
+
+            <div className="home-catalog__filters surface surface--inset" id="filters">
+              <div className="filter-field">
+                <label htmlFor="category">Category</label>
+                <select id="category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+                  <option value="">All categories</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="filter-field">
+                <label htmlFor="search">Search</label>
+                <input
+                  id="search"
+                  type="text"
+                  placeholder="Search products"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="filter-field">
+                <label htmlFor="sort">Sort by</label>
+                <select id="sort" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                  <option value="">Recommended</option>
+                  <option value="asc">Price: Low to High</option>
+                  <option value="desc">Price: High to Low</option>
+                </select>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="home-catalog__state surface surface--inset" role="status">
+                <span className="home-catalog__spinner" aria-hidden="true" />
                 <p>Loading products...</p>
-                {retryCount > 0 && <p style={{ color: '#666' }}>Retry attempt {retryCount}</p>}
+                {retryCount > 0 && <p className="text-muted">Retry attempt {retryCount}</p>}
               </div>
-            )}
-            
-            {/* Error State */}
-            {error && !loading && (
-              <div style={{ 
-                textAlign: 'center', 
-                padding: '2rem',
-                backgroundColor: '#ffe6e6',
-                border: '1px solid #ff9999',
-                borderRadius: '8px',
-                margin: '1rem 0'
-              }}>
-                <p style={{ color: '#cc0000', marginBottom: '1rem' }}>
-                  Failed to load products: {error}
-                </p>
-                <button 
-                  onClick={handleRetry}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#3498db',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Retry
-                </button>
+            ) : error ? (
+              <div className="home-catalog__state surface surface--inset" role="alert">
+                <h3>We hit a speed bump</h3>
+                <p className="text-muted">{`Failed to load products: ${error}`}</p>
+                <button type="button" className="btn-primary" onClick={handleRetry}>Retry</button>
               </div>
-            )}
-            
-            {/* Filters and Content */}
-            {!loading && (
-              <>
-                <div className="filters" style={{ display: 'flex', gap: '12px', margin: '12px 0' }}>
-                  <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-                    <option value="">All categories</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                  <input type="text" placeholder="Search products" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                  <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                    <option value="">Sort by</option>
-                    <option value="asc">Price: Low to High</option>
-                    <option value="desc">Price: High to Low</option>
-                  </select>
-                </div>
-                
-                <ul className="menu">
-                  {Array.isArray(products) && products.length > 0 ? (
-                    products
-                      .filter((p) => {
-                        if (!selectedCategory) return true;
-                        const pid = String(p.categoryId ?? p.category?.id ?? "");
-                        return String(selectedCategory) === pid;
-                      })
-                      .filter((p) => {
-                        const q = searchQuery.trim().toLowerCase();
-                        if (!q) return true;
-                        const nm = String(p.name || p.dish_Name || "").toLowerCase();
-                        return nm.includes(q);
-                      })
-                      .sort((a, b) => {
-                        if (!sortOrder) return 0;
-                        const pa = Number(a.price ?? a.dish_Price) || 0;
-                        const pb = Number(b.price ?? b.dish_Price) || 0;
-                        return sortOrder === 'asc' ? pa - pb : pb - pa;
-                      })
-                      .map((product) => {
-                        const key = product.productId || product.dish_Id || product.id || product._id || Math.random();
-                        return (
-                          <li key={key} className="food" style={{ listStyle: 'none' }}>
-                            <ProductCard product={product} onAdd={() => handleAddToCart(product)} />
-                          </li>
-                        );
-                      })
-                  ) : (
-                    !error && <p>No products available.</p>
-                  )}
-                </ul>
-              </>
+            ) : isEmpty ? (
+              <div className="home-catalog__state surface surface--inset">
+                <h3>No products just yet</h3>
+                <p className="text-muted">Try adjusting your filters or check back in a little while.</p>
+              </div>
+            ) : (
+              <ul className="product-grid">
+                {filteredProducts.map((product) => {
+                  const key = product.productId || product.id || Math.random();
+                  return (
+                    <li key={key}>
+                      <ProductCard product={product} onAdd={() => handleAddToCart(product)} />
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
-          <div className={`cart-head ${clickEffect ? 'click-effect' : ''}`}
->
-              <h1>Order Now</h1>
-          </div>
-            {/* Cart UI was removed. Please use the Cart page from the navbar. */}
         </section>
       </main>
-      <Footer/>
-    </section>
+      <Footer />
+    </div>
   );
 }
 

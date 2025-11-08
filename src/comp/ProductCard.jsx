@@ -1,6 +1,5 @@
 import React from "react";
 
-// Reusable product card component
 function ProductCard({ product, onAdd }) {
   const name = String(product?.name || product?.dish_Name || "Unnamed");
   const priceRaw = product?.price ?? product?.dish_Price ?? 0;
@@ -14,33 +13,30 @@ function ProductCard({ product, onAdd }) {
     : "-";
 
   return (
-    <article className="product-card" aria-label={name}>
-      <div className="product-image">
-        {/* Use background color as subtle placeholder */}
+    <article className="product-card surface" aria-label={name}>
+      <div className="product-card__image">
         {imageUrl ? (
           <img src={imageUrl} alt={name} loading="lazy" />
         ) : (
-          <div className="product-image__placeholder" aria-hidden="true">No Image</div>
+          <div className="product-card__placeholder" aria-hidden="true">No Image</div>
         )}
       </div>
-
-      <div className="product-content">
-        <h3 className="product-title" title={name}>{name}</h3>
-        {category ? (
-          <span className="badge" title={category}>{category}</span>
-        ) : null}
-      </div>
-
-      <div className="product-footer">
-        <span className="price">{formattedPrice}</span>
-        <button
-          className="add-btn"
-          onClick={() => onAdd && onAdd()}
-          type="button"
-          aria-label={`Add ${name} to cart`}
-        >
-          Add to Cart
-        </button>
+      <div className="product-card__body">
+        <div className="product-card__header">
+          <h3 className="product-card__title" title={name}>{name}</h3>
+          {category ? <span className="badge" title={category}>{category}</span> : null}
+        </div>
+        <div className="product-card__footer">
+          <span className="product-card__price">{formattedPrice}</span>
+          <button
+            className="product-card__button"
+            onClick={() => onAdd && onAdd()}
+            type="button"
+            aria-label={`Add ${name} to cart`}
+          >
+            Add to Cart
+          </button>
+        </div>
       </div>
     </article>
   );
